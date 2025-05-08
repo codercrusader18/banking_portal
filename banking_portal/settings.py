@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -57,7 +57,9 @@ ROOT_URLCONF = 'banking_portal.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates'),  # Project-wide templates
+                 os.path.join(BASE_DIR, 'core/templates'),  # Core app templates
+                 ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -68,6 +70,9 @@ TEMPLATES = [
         },
     },
 ]
+
+LOGIN_REDIRECT_URL = '/bank/accounts/'  # Added this later
+LOGOUT_REDIRECT_URL = '/accounts/login/'#added later
 
 WSGI_APPLICATION = 'banking_portal.wsgi.application'
 

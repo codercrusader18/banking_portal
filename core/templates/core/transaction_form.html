@@ -1,0 +1,36 @@
+<!-- core/templates/core/transaction_form.html -->
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<div class="container mt-5">
+
+    {% if messages %}
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <h2>{{ action }} Money</h2>
+
+    <!-- Show current balance -->
+    <p><strong>Current Balance:</strong> ₹{{ account.balance|floatformat:2|intcomma }}</p>
+
+    <!-- The actual form -->
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Amount (₹)</label>
+            <input type="number" step="1.00" class="form-control" name="amount" required>
+        </div>
+        <button type="submit" class="btn btn-primary">{{ action }}</button>
+        <a href="{% url 'bank:account_detail' account.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
