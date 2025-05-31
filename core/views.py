@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render
-from .models import CustomerAccount, Transaction
+from .models import CustomerAccount, Transaction, CustomerProfile
 from django.db.models import Q
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
@@ -41,6 +41,31 @@ def account_detail(request, pk):
 
 # core/views.py
 
+@login_required
+def create_account(request):
+    if request.method == 'POST':
+        account_type = request.POST.get('account_type')
+
+        # Generate a unique account number
+        prefix = 'SAV' if account_type == 'Savings' else 'CUR'
+        last_account = CustomerAccount.objects.filter(
+             account_number__startswith=prefix
+        ).order_by('-account_number').first()
+        last_num = int(last_account.account_number[3:]) if last_account else 0
+        account_number = f"{prefix}{last_num + 1:04d}"  # SAV0001, SAV0002, etc.
+
+        # Create the account
+        CustomerAccount.objects.create(
+            user=request.user,
+            name=f"{request.user.username}",
+            account_number=account_number,
+            account_type=account_type,
+            balance=0  # Start with 0 balance
+        )
+        messages.success(request, f"New {account_type} account created successfully!")
+        return redirect('bank:account_list')
+
+    return render(request, 'core/create_account.html')
 
 def deposit(request, pk):
     account = get_object_or_404(CustomerAccount, pk=pk)
@@ -98,17 +123,28 @@ def register(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+
+            # Create customer profile
+            profile = CustomerProfile.objects.create(
+                user=user,
+                full_name=request.POST.get('account_holder', user.username),
+                phone=request.POST.get('phone', ''),
+                address=request.POST.get('address', ''),
+                kyc_verified=False
+            )
+
             # Create bank account
             CustomerAccount.objects.create(
                 user=user,
-                name=user.username,
-                account_number=str(random.randint(100000, 999999)),
+                profile=profile,
+                name=f"{profile.full_name}'s Primary Account",
+                # account_number=str(random.randint(100000, 999999)), this line has been removed because now account number will be generated a/c to a set of rules
+                #on removing the above line the account_number is sent empty .create() will itself generate a/c number
                 balance=0,
-                contact='',  # Default empty contact
-                account_type='Savings'  # Default account type
+                account_type='Savings'
             )
             login(request, user)
             return redirect('bank:account_list')
     else :
         form = UserCreationForm()
-    return render(request, 'registration/register.html', {'form': form})
+    return render(request, 'registration/register.html', {'form': form, 'profile_fields': True }) # Add this to template context

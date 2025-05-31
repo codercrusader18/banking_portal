@@ -1,0 +1,20 @@
+<!-- core/templates/core/create_account.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Create New Account</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Account Type</label>
+            <select name="account_type" class="form-select">
+                <option value="Savings">Savings Account</option>
+                <option value="Current">Current Account</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+        <a href="{% url 'bank:account_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

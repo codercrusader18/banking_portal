@@ -3,7 +3,11 @@
 
 {%block content %}
     <div class="container py-5">
-        <h1 class="mb-4 text-center">Customer Accounts</h1>
+        <div class="d-flex justify-content-between mb-4">
+        <h1>Your Accounts</h1>
+        <a href="{% url 'bank:create_account' %}" class="btn btn-success">Add Another Account</a>
+        </div>
+<!--        <h1 class="mb-4 text-center">Customer Accounts</h1>-->
 
         <form method="get" class="mb-4 d-flex justify-content-center">
             <input type="text" name="q" class="form-control w-50 me-2" placeholder="Search by name or account number" value="{{ query|default:'' }}">
