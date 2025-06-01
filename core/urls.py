@@ -11,4 +11,6 @@ urlpatterns = [
     path('accounts/<int:pk>/deposit/', views.deposit, name='deposit'),
     path('accounts/<int:pk>/withdraw/', views.withdraw, name='withdraw'),
     path('register/', views.register, name='register'),
+    path('accounts/request/', views.create_account, name='request_account'),
+    path('registration-submitted/', views.registration_submitted, name='registration_submitted'),
 ]

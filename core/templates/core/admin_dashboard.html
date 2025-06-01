@@ -1,0 +1,91 @@
+<!-- core/templates/core/admin_dashboard.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Admin Dashboard</h2>
+
+    <!-- Pending Approvals Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning">
+            <h4>Pending Approvals</h4>
+        </div>
+        <div class="card-body">
+            <h5>User Registrations</h5>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>KYC Document</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in pending_users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.kyc_document %}
+                            <a href="{{ user.kyc_document.url }}" target="_blank">View Document</a>
+                            {% else %}
+                            No document
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'approve_user' user.id %}" class="btn btn-success btn-sm">Approve</a>
+                            <a href="{% url 'reject_user' user.id %}" class="btn btn-danger btn-sm">Reject</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4">No pending user approvals</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h5 class="mt-4">Account Requests</h5>
+            <!-- Similar table for account requests -->
+        </div>
+    </div>
+
+    <!-- User Management Section -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4>User Management</h4>
+        </div>
+        <div class="card-body">
+            <form method="get" class="mb-4">
+                <input type="text" name="q" placeholder="Search users..." class="form-control">
+            </form>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>CIF Number</th>
+                        <th>Username</th>
+                        <th>Accounts</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profile in user_profiles %}
+                    <tr>
+                        <td>{{ profile.cif_number }}</td>
+                        <td>{{ profile.user.username }}</td>
+                        <td>
+                            {% for account in profile.user.customeraccount_set.all %}
+                            {{ account.account_number }} ({{ account.account_type }})<br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <a href="{% url 'user_details' profile.user.id %}" class="btn btn-info btn-sm">Details</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,18 +3,45 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2>Create New Account</h2>
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label class="form-label">Account Type</label>
-            <select name="account_type" class="form-select">
-                <option value="Savings">Savings Account</option>
-                <option value="Current">Current Account</option>
-            </select>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Request Additional Account</h3>
+                </div>
+                <div class="card-body">
+                    {% if not user.is_approved %}
+                        <div class="alert alert-danger">
+                            Your account is not yet approved. Please wait for admin approval before requesting new accounts.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-4">
+                            <strong>Note:</strong> All new account requests require admin approval.
+                        </div>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Account Type</label>
+                                <select name="account_type" class="form-select" required>
+                                    <option value="" disabled selected>Select account type</option>
+                                    <option value="Savings">Savings Account</option>
+                                    <option value="Current">Current Account</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Purpose of this account</label>
+                                <textarea name="purpose" class="form-control" rows="2" required></textarea>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Submit Request</button>
+                                <a href="{% url 'bank:account_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Create Account</button>
-        <a href="{% url 'bank:account_list' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
 {% endblock %}

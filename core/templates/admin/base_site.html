@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+
+{% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}
+{% if pending_users or pending_accounts %}
+<div class="approval-notice">
+    <h2>Pending Approvals</h2>
+    {% if pending_users %}
+    <p><a href="{% url 'admin:core_user_changelist' %}?is_approved__exact=0">
+        {{ pending_users }} user(s) waiting approval
+    </a></p>
+    {% endif %}
+    {% if pending_accounts %}
+    <p><a href="{% url 'admin:core_accountrequest_changelist' %}?is_approved__exact=0">
+        {{ pending_accounts }} account request(s) waiting approval
+    </a></p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

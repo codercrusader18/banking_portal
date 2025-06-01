@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+from django.http import HttpResponseForbidden
 from django.shortcuts import render
+from .forms.user_forms import CustomUserCreationForm
 from .models import CustomerAccount, Transaction, CustomerProfile
 from django.db.models import Q
 from django.db.models import Sum
@@ -43,6 +45,9 @@ def account_detail(request, pk):
 
 @login_required
 def create_account(request):
+    if not request.user.is_approved:
+        return HttpResponseForbidden("Your account needs admin approval")
+
     if request.method == 'POST':
         account_type = request.POST.get('account_type')
 
@@ -62,7 +67,7 @@ def create_account(request):
             account_type=account_type,
             balance=0  # Start with 0 balance
         )
-        messages.success(request, f"New {account_type} account created successfully!")
+        messages.success(request, 'Account request submitted for approval')
         return redirect('bank:account_list')
 
     return render(request, 'core/create_account.html')
@@ -120,9 +125,12 @@ def withdraw(request, pk):
 
 def register(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
+            user.is_active = False  # User can't login until approved
+            user.is_approved = False
+            user.save()
 
             # Create customer profile
             profile = CustomerProfile.objects.create(
@@ -130,21 +138,19 @@ def register(request):
                 full_name=request.POST.get('account_holder', user.username),
                 phone=request.POST.get('phone', ''),
                 address=request.POST.get('address', ''),
-                kyc_verified=False
+                kyc_verified=False,
+                kyc_document = request.FILES.get('kyc_document')
             )
 
-            # Create bank account
-            CustomerAccount.objects.create(
-                user=user,
-                profile=profile,
-                name=f"{profile.full_name}'s Primary Account",
-                # account_number=str(random.randint(100000, 999999)), this line has been removed because now account number will be generated a/c to a set of rules
-                #on removing the above line the account_number is sent empty .create() will itself generate a/c number
-                balance=0,
-                account_type='Savings'
-            )
-            login(request, user)
-            return redirect('bank:account_list')
+            messages.success(request, 'Registration submitted for admin approval')
+            return redirect('bank:registration_submitted')
     else :
-        form = UserCreationForm()
-    return render(request, 'registration/register.html', {'form': form, 'profile_fields': True }) # Add this to template context
+        form = CustomUserCreationForm()
+    return render(request, 'registration/register.html', {'form': form}) # Add this to template context
+
+
+def registration_submitted(request):
+    return render(request, 'registration/submitted.html', {
+        'title': 'Application Submitted',
+        'message': 'Your registration is pending admin approval'
+    })

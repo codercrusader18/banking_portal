@@ -1,16 +1,18 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 import uuid
 
 
 class CustomerProfile(models.Model):
     """Extended user profile containing CIF and other customer details"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     cif_number = models.CharField(max_length=10, unique=True, blank=True)
     full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     address = models.TextField()
     kyc_verified = models.BooleanField(default=False)
+    kyc_document = models.FileField(upload_to='kyc_documents/', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.cif_number:
@@ -26,7 +28,7 @@ class CustomerProfile(models.Model):
 
 
 class CustomerAccount(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE) #Temporary
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE) #Temporary
     profile = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     account_number = models.CharField(max_length=10, unique=True)
@@ -82,3 +84,38 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type} - ₹{self.amount} ({self.timestamp})"
+
+
+class User(AbstractUser):
+    is_approved = models.BooleanField(default=False)
+    kyc_documents = models.FileField(upload_to='kyc/', null=True, blank=True)
+    # Fix reverse accessor clashes
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to.',
+        related_name="custom_user_set",  # Changed
+        related_query_name="user",
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="custom_user_set",  # Changed
+        related_query_name="user",
+    )
+
+    def __str__(self):
+        return self.username
+
+
+class AccountRequest(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    account_type = models.CharField(max_length=10, choices=CustomerAccount.ACCOUNT_TYPES)
+    is_approved = models.BooleanField(default=False)
+    requested_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.account_type} Account Request"

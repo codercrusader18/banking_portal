@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">Application Submitted</h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="mb-3">Thank you for your application!</h4>
+                    <p class="lead">
+                        Your registration has been submitted for admin approval.
+                    </p>
+                    <div class="alert alert-info mt-4">
+                        <h5>What happens next?</h5>
+                        <ul class="text-start">
+                            <li>We'll review your KYC documents within 24-48 hours</li>
+                            <li>You'll receive an email when your account is approved</li>
+                            <li>Check your spam folder if you don't see our email</li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'login' %}" class="btn btn-primary mt-3">
+                        Return to Login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
