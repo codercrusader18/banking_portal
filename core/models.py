@@ -88,6 +88,7 @@ class Transaction(models.Model):
 
 class User(AbstractUser):
     is_approved = models.BooleanField(default=False)
+    is_admin = models.BooleanField(default=False)
     kyc_documents = models.FileField(upload_to='kyc/', null=True, blank=True)
     # Fix reverse accessor clashes
     groups = models.ManyToManyField(
@@ -114,6 +115,7 @@ class User(AbstractUser):
 class AccountRequest(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     account_type = models.CharField(max_length=10, choices=CustomerAccount.ACCOUNT_TYPES)
+    purpose = models.TextField(blank=True)
     is_approved = models.BooleanField(default=False)
     requested_at = models.DateTimeField(auto_now_add=True)
 

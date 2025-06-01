@@ -19,15 +19,23 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
 from core import views #Import your views
+from core.views import CustomLoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Authentication URLs (login/logout)
-    path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('accounts/login/', CustomLoginView.as_view(), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('accounts/register/', views.register, name='register'),
     path('bank/', include('core.urls', namespace='bank')),  # Your existing bank URLs
 
     path('', RedirectView.as_view(url='/bank/accounts/', permanent=True)),
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('approve-user/<int:user_id>/', views.approve_user, name='approve_user'),
+path('approve-account/<int:request_id>/', views.approve_account, name='approve_account'),
+    path('user-details/<int:user_id>/', views.user_details, name='user_details'),
+path('approve-user/<int:user_id>/', views.approve_user, name='approve_user'),
+    path('reject-user/<int:user_id>/', views.reject_user, name='reject_user'),
+
 ]

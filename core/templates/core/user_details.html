@@ -1,0 +1,46 @@
+<!-- core/templates/core/user_details.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>User Details: {{ user.username }}</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">Profile Information</div>
+                <div class="card-body">
+                    <p><strong>CIF Number:</strong> {{ profile.cif_number }}</p>
+                    <p><strong>Full Name:</strong> {{ profile.full_name }}</p>
+                    <p><strong>Phone:</strong> {{ profile.phone }}</p>
+                    <p><strong>Address:</strong> {{ profile.address }}</p>
+                    <p><strong>KYC Document:</strong>
+                        {% if profile.kyc_document %}
+                        <a href="{{ profile.kyc_document.url }}" target="_blank">View</a>
+                        {% else %}
+                        Not uploaded
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Accounts</div>
+                <div class="card-body">
+                    {% for account in accounts %}
+                    <div class="mb-3">
+                        <h5>{{ account.account_number }} ({{ account.account_type }})</h5>
+                        <p>Balance: ₹{{ account.balance }}</p>
+                        <a href="{% url 'account_transactions' account.id %}" class="btn btn-sm btn-info">
+                            View Transactions
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

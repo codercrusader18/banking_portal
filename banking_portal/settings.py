@@ -73,8 +73,10 @@ TEMPLATES = [
     },
 ]
 
-LOGIN_REDIRECT_URL = '/bank/accounts/'  # Added this later
+LOGIN_REDIRECT_URL = 'account_list'  # Added this later
 LOGOUT_REDIRECT_URL = '/accounts/login/'#added later
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'#temporary email workaround to print the email to console
 
 WSGI_APPLICATION = 'banking_portal.wsgi.application'
 

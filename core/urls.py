@@ -13,4 +13,6 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('accounts/request/', views.create_account, name='request_account'),
     path('registration-submitted/', views.registration_submitted, name='registration_submitted'),
+
+    path('cancel-request/<int:request_id>/', views.cancel_request, name='cancel_request'),
 ]

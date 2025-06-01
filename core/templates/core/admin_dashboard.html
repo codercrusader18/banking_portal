@@ -45,7 +45,32 @@
             </table>
 
             <h5 class="mt-4">Account Requests</h5>
-            <!-- Similar table for account requests -->
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Account Type</th>
+                        <th>Request Date</th>
+                        <th>Purpose</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in pending_accounts %}
+                    <tr>
+                        <td>{{ req.user.username }}</td>
+                        <td>{{ req.account_type }}</td>
+                        <td>{{ req.requested_at|date:"Y-m-d" }}</td>
+                        <td>{{ req.purpose }}</td>
+                        <td>
+                            <a href="{% url 'approve_account' req.id %}" class="btn btn-success btn-sm">Approve</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">No pending account requests</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 

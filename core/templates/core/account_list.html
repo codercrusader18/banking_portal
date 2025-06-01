@@ -1,53 +1,98 @@
-{%extends 'base.html'%}
+{% extends 'base.html' %}
 {% load humanize %}
 
-{%block content %}
-    <div class="container py-5">
-        <div class="d-flex justify-content-between mb-4">
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between mb-4">
         <h1>Your Accounts</h1>
         <a href="{% url 'bank:create_account' %}" class="btn btn-success">Add Another Account</a>
-        </div>
-<!--        <h1 class="mb-4 text-center">Customer Accounts</h1>-->
-
-        <form method="get" class="mb-4 d-flex justify-content-center">
-            <input type="text" name="q" class="form-control w-50 me-2" placeholder="Search by name or account number" value="{{ query|default:'' }}">
-            <button type="submit" class="btn btn-primary">Search</button>
-        </form>
-
-        <table class="table table-bordered table-striped text-center">
-            <thead class="table-dark">
-                <tr>
-                    <th>Name</th>
-                    <th>Account Number</th>
-                    <th>Account Type</th>
-                    <th>Balance</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for account in accounts %}
-                <tr>
-                    <td>
-                        <a href="{% url 'bank:account_detail' account.pk %}">
-                            {{ account.name }}
-                        </a>
-                    </td>
-                    <td>{{ account.account_number }}</td>
-                    <td>{{ account.account_type }}</td>
-                    <td>₹ {{ account.balance }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="3">No accounts found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr class="fw-bold table-primary">
-                    <td colspan="3">Total Balance</td>
-                    <td>₹ {{ total_balance|floatformat:2|intcomma }}</td>
-                </tr>
-            </tfoot>
-
-        </table>
     </div>
-{%endblock%}
+
+    <!-- Pending Requests Section -->
+    {% if pending_requests %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning">
+            <h4>Pending Account Requests</h4>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Account Type</th>
+                        <th>Request Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in pending_requests %}
+                    <tr>
+                        <td>{{ req.get_account_type_display }}</td>
+                        <td>{{ req.requested_at|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="badge bg-warning">Pending Approval</span>
+                        </td>
+                        <td>
+                            <form method="post" action="{% url 'bank:cancel_request' req.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Cancel Request</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Approved Accounts Section -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h4>Your Active Accounts</h4>
+        </div>
+        <div class="card-body">
+            <form method="get" class="mb-4 d-flex justify-content-center">
+                <input type="text" name="q" class="form-control w-50 me-2"
+                       placeholder="Search by name or account number" value="{{ query|default:'' }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+
+            <table class="table table-bordered table-striped text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Account Number</th>
+                        <th>Account Type</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in accounts %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'bank:account_detail' account.pk %}">
+                                {{ account.name }}
+                            </a>
+                        </td>
+                        <td>{{ account.account_number }}</td>
+                        <td>{{ account.account_type }}</td>
+                        <td>₹ {{ account.balance|floatformat:2|intcomma }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">No active accounts found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold table-primary">
+                        <td colspan="3">Total Balance</td>
+                        <td>₹ {{ total_balance|floatformat:2|intcomma }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div> <!-- This closes the main container -->
+{% endblock %}
