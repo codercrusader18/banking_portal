@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3>Transfer Money</h3>
+                </div>
+                <div class="card-body">
+                    {% if form.from_account.value %}
+                        <div class="alert alert-info">
+                            <strong>Current Balance:</strong>
+                            ₹{{ form.from_account.value.balance|floatformat:2 }}
+                        </div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">From Account</label>
+                            {{ form.from_account }}
+                            {% if form.from_account.value %}
+                                <small class="form-text text-muted">
+                                    Available: ₹{{ form.from_account.value.balance|floatformat:2 }}
+                                </small>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">To Account Number</label>
+                            {{ form.to_account_number }}
+                            <small class="form-text text-muted">Enter the 10-digit account number</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Amount (₹)</label>
+                            {{ form.amount }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description (Optional)</label>
+                            {{ form.description }}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Transfer</button>
+                            <a href="{% url 'bank:account_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Live account number validation
+    const accountField = document.querySelector('#id_to_account_number');
+    accountField.addEventListener('input', function() {
+        if(this.value.length === 10) {
+            fetch(`/api/validate-account/${this.value}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.exists) {
+                        this.classList.add('is-valid');
+                        this.classList.remove('is-invalid');
+                    } else {
+                        this.classList.add('is-invalid');
+                        this.classList.remove('is-valid');
+                    }
+                });
+        }
+    });
+});
+</script>
+{% endblock %}

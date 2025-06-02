@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">  <!-- Wider column for KYC docs -->
+        <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h3 class="mb-0">Account Application</h3>
@@ -13,7 +14,20 @@
                         <strong>Note:</strong> All applications require admin approval. You'll receive an email when your account is activated.
                     </div>
 
-                    <form method="post" enctype="multipart/form-data">  <!-- Added enctype -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Error!</strong> Please correct the following:
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" id="registrationForm">
                         {% csrf_token %}
 
                         <!-- Personal Information Section -->
@@ -21,44 +35,94 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Full Legal Name</label>
-                                <input type="text" name="account_holder" class="form-control" required>
+                                <input type="text" name="account_holder" class="form-control {% if form.account_holder.errors %}is-invalid{% endif %}"
+                                       value="{{ form.account_holder.value|default:'' }}" required>
+                                {% if form.account_holder.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.account_holder.errors.0 }}
+                                    </div>
+                                {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Phone Number</label>
-                                <input type="tel" name="phone" class="form-control" required>
+                                <input type="tel" name="phone" class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                                       value="{{ form.phone.value|default:'' }}" pattern="[0-9]{10,}" title="10 or more digits" required>
+                                {% if form.phone.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.phone.errors.0 }}
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Full Address</label>
-                            <textarea name="address" class="form-control" rows="3" required></textarea>
+                            <textarea name="address" class="form-control {% if form.address.errors %}is-invalid{% endif %}" rows="3" required>{{ form.address.value|default:'' }}</textarea>
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.address.errors.0 }}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <!-- KYC Documents Section -->
                         <h5 class="mb-3 mt-4 border-bottom pb-2">Identity Verification</h5>
                         <div class="mb-3">
                             <label class="form-label">Government ID (PDF/Image)</label>
-                            <input type="file" name="kyc_document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                            <small class="text-muted">Upload a clear photo/scan of your passport, driver's license, or national ID</small>
+                            <input type="file" name="kyc_document" class="form-control {% if form.kyc_document.errors %}is-invalid{% endif %}" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <small class="text-muted">Upload a clear photo/scan of your passport, driver's license, or national ID (max 5MB)</small>
+                            {% if form.kyc_document.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.kyc_document.errors.0 }}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <!-- Login Credentials Section -->
                         <h5 class="mb-3 mt-4 border-bottom pb-2">Login Details</h5>
                         <div class="mb-3">
                             <label class="form-label">Username</label>
-                            {{ form.username }}
+                            <input type="text" name="username" class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                                   value="{{ form.username.value|default:'' }}" required>
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.username.errors.0 }}
+                                </div>
+                            {% endif %}
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Password</label>
-                            {{ form.password1 }}
-                            <div class="form-text">Must be at least 8 characters</div>
+                            <input type="password" name="password1" id="password1" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" required>
+                            {% if form.password1.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.password1.errors.0 }}
+                                </div>
+                            {% endif %}
+
+                            <!-- Password strength meter -->
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar" id="password-strength-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="password-strength-text" class="form-text text-muted"></small>
+                            <small class="form-text text-muted">
+                                Must be at least 8 characters and not too common.
+                            </small>
                         </div>
+
                         <div class="mb-3">
                             <label class="form-label">Confirm Password</label>
-                            {{ form.password2 }}
+                            <input type="password" name="password2" id="password2" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" required>
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.password2.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small id="password-match-feedback" class="form-text"></small>
                         </div>
 
                         <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">Submit for Approval</button>
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitButton">
+                                Submit for Approval
+                            </button>
                             <a href="{% url 'login' %}" class="btn btn-outline-secondary">Already have an account?</a>
                         </div>
                     </form>
@@ -67,4 +131,68 @@
         </div>
     </div>
 </div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const password1 = document.getElementById('password1');
+    const password2 = document.getElementById('password2');
+    const strengthBar = document.getElementById('password-strength-bar');
+    const strengthText = document.getElementById('password-strength-text');
+    const matchFeedback = document.getElementById('password-match-feedback');
+    const form = document.getElementById('registrationForm');
+    const submitButton = document.getElementById('submitButton');
+
+    // Password strength meter
+    password1.addEventListener('input', function() {
+        const strength = calculatePasswordStrength(this.value);
+        strengthBar.style.width = strength.percentage + '%';
+        strengthBar.className = 'progress-bar bg-' + strength.color;
+        strengthText.textContent = strength.text;
+        strengthText.className = 'form-text text-' + strength.color;
+    });
+
+    // Password match checker
+    password2.addEventListener('input', function() {
+        if (password1.value && password2.value) {
+            if (password1.value === password2.value) {
+                matchFeedback.textContent = 'Passwords match!';
+                matchFeedback.className = 'form-text text-success';
+            } else {
+                matchFeedback.textContent = 'Passwords do not match!';
+                matchFeedback.className = 'form-text text-danger';
+            }
+        }
+    });
+
+    // Form submission handler
+    form.addEventListener('submit', function() {
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML =
+                '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
+        }
+    });
+
+    function calculatePasswordStrength(password) {
+        let strength = 0;
+        if (password.length >= 8) strength += 1;
+        if (password.match(/[a-z]/)) strength += 1;
+        if (password.match(/[A-Z]/)) strength += 1;
+        if (password.match(/[0-9]/)) strength += 1;
+        if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+
+        const strengthMap = [
+            { percentage: 20, color: 'danger', text: 'Very Weak' },
+            { percentage: 40, color: 'warning', text: 'Weak' },
+            { percentage: 60, color: 'info', text: 'Moderate' },
+            { percentage: 80, color: 'primary', text: 'Strong' },
+            { percentage: 100, color: 'success', text: 'Very Strong' }
+        ];
+
+        return strengthMap[Math.min(strength, 4)];
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

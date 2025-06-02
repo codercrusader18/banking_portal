@@ -3,6 +3,8 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.conf import settings  # Needed for email settings
+from django.utils.html import format_html
+
 from .models import CustomerAccount, Transaction, CustomerProfile, AccountRequest
 
 User = get_user_model()  # Get the currently active user model
@@ -79,10 +81,21 @@ class AccountRequestAdmin(admin.ModelAdmin):
 
     approve_requests.short_description = "Approve selected account requests"
 
+
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ('account', 'transaction_type', 'amount', 'timestamp', 'related_account')
+    list_filter = ('transaction_type', 'timestamp')
+    search_fields = ('account__account_number', 'related_account__account_number')
+
+    def get_description(self, obj):
+        return obj.description[:50] + "..." if len(obj.description) > 50 else obj.description
+
+    get_description.short_description = 'Description'
+
 if not admin.site.is_registered(User):
     admin.site.register(User, CustomUserAdmin)
 
 # Register other models
+admin.site.register(Transaction, TransactionAdmin)
 admin.site.register(CustomerAccount)
-admin.site.register(Transaction)
 admin.site.register(AccountRequest, AccountRequestAdmin)

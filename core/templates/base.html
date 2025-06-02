@@ -24,14 +24,17 @@
             <div class="ms-auto">
                 {% if user.is_authenticated %}
                     <span class="navbar-text me-3">Hello, {{ user.username }}</span>
-                    <a href="{% url 'bank:account_list' %}" class="btn btn-primary">My Accounts</a>
+                    {% if not user.is_admin %}
+                    <a href="{% url 'bank:account_list' %}" class="btn btn-outline-primary me-2">My Accounts</a>
+                    <a href="{% url 'bank:transfer' %}" class="btn btn-primary me-2">Transfer Money</a>
+                    {% endif %}
                     <form action="{% url 'logout' %}" method="post" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-outline-danger">Logout</button>
                     </form>
                 {% else %}
                     <a href="{% url 'login' %}" class="btn btn-outline-primary me-2">Login</a>
-                    <a href="{% url 'bank:register' %}" class="btn btn-primary">Register</a>
+                    <a href="{% url 'register' %}" class="btn btn-primary">Register</a>
                 {% endif %}
             </div>
         </div>
@@ -57,7 +60,7 @@
 
     <footer class="bg-light py-3 mt-4">
         <div class="container text-center">
-            <p class="mb-0">© 2023 Banking Portal</p>
+            <p class="mb-0">© 2025 Banking Portal</p>
         </div>
     </footer>
 

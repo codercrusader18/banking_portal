@@ -66,12 +66,13 @@ class Transaction(models.Model):
     TRANSACTION_TYPES = [
         ('DEPOSIT', 'Deposit'),
         ('WITHDRAW', 'Withdraw'),
-        ('TRANSFER', 'Transfer'),
+        ('TRANSFER_OUT', 'Transfer Out'),
+        ('TRANSFER_IN', 'Transfer In'),
     ]
 
     account = models.ForeignKey(CustomerAccount, on_delete=models.CASCADE, related_name='transactions')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    transaction_type = models.CharField(max_length=12, choices=TRANSACTION_TYPES)
     timestamp = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=200, blank=True)  # e.g., "Transfer to account X"
     related_account = models.ForeignKey(
@@ -91,6 +92,9 @@ class User(AbstractUser):
     is_admin = models.BooleanField(default=False)
     kyc_documents = models.FileField(upload_to='kyc/', null=True, blank=True)
     # Fix reverse accessor clashes
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
+
     groups = models.ManyToManyField(
         'auth.Group',
         verbose_name='groups',
@@ -107,6 +111,9 @@ class User(AbstractUser):
         related_name="custom_user_set",  # Changed
         related_query_name="user",
     )
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
 
     def __str__(self):
         return self.username

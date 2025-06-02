@@ -19,6 +19,7 @@ urlpatterns = [
     path('loans/reject/<int:loan_id>/', views.reject_loan, name='reject_loan'),
     path('loans/request/', views.request_loan, name='request_loan'),
     path('loans/status/', views.loan_status, name='loan_status'),
-
+    path('transfer/', views.transfer_money, name='transfer'),
     path('cancel-request/<int:request_id>/', views.cancel_request, name='cancel_request'),
+    path('api/validate-account/<str:account_number>/', views.validate_account),
 ]

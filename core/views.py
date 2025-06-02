@@ -1,23 +1,24 @@
 import os
-
+from django.http import JsonResponse
+from django.db import transaction
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
 from django.http import HttpResponseForbidden
-from django.shortcuts import render
 from .forms.user_forms import CustomUserCreationForm, LoanRequestForm
 from .models import CustomerAccount, Transaction, CustomerProfile, AccountRequest, LoanRequest
 from django.db.models import Q
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
-from django.contrib import messages
 from decimal import Decimal, InvalidOperation
 from django.contrib.auth import login, get_user_model
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms.transfer_forms import TransferForm
 import random
 
 @login_required
@@ -50,7 +51,11 @@ def account_list(request):
 @login_required()
 def account_detail(request, pk):
     account = get_object_or_404(CustomerAccount, pk=pk)
-    return render(request, 'core/account_detail.html', {'account': account})
+    transfers = account.transactions.filter(
+        Q(transaction_type='TRANSFER_OUT') |
+        Q(transaction_type='TRANSFER_IN')
+    ).order_by('-timestamp')
+    return render(request, 'core/account_detail.html', {'account': account, transfers:transfers})
 
 # core/views.py
 
@@ -135,30 +140,18 @@ def withdraw(request, pk):
             messages.error(request, "Invalid amount entered")
     return render(request, 'core/transaction_form.html', {'account': account, 'action': 'Withdraw'})
 
+
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
-            user = form.save()
-            user.is_active = False  # User can't login until approved
-            user.is_approved = False
-            user.save()
-
-            # Create customer profile
-            profile = CustomerProfile.objects.create(
-                user=user,
-                full_name=request.POST.get('account_holder', user.username),
-                phone=request.POST.get('phone', ''),
-                address=request.POST.get('address', ''),
-                kyc_verified=False,
-                kyc_document = request.FILES.get('kyc_document')
-            )
-
+            form.save()  # Handles user + profile creation
             messages.success(request, 'Registration submitted for admin approval')
             return redirect('bank:registration_submitted')
-    else :
+    else:
         form = CustomUserCreationForm()
-    return render(request, 'registration/register.html', {'form': form}) # Add this to template context
+
+    return render(request, 'registration/register.html', {'form': form})
 
 
 def registration_submitted(request):
@@ -332,7 +325,7 @@ def request_loan(request):
     initial = {}
 
     if account_id:
-        account = get_object_or_404(CustomerAccount, id=account_id, user=request.user)
+        account = get_object_or_404(CustomerAccount, pk=account_id, user=request.user)
         initial['account'] = account
 
     if request.method == 'POST':
@@ -402,3 +395,95 @@ def reject_loan(request, loan_id):
         return redirect('admin_dashboard')
 
     return render(request, 'core/reject_loan.html', {'loan': loan})
+
+
+@login_required
+def transfer_money(request):
+    if request.user.is_admin:
+        return HttpResponseForbidden("Admins cannot perform transfers")
+
+    initial = {}
+    account_id = request.GET.get('account')
+
+    if account_id:
+        try:
+            account = CustomerAccount.objects.get(pk=account_id, user=request.user)
+            initial['from_account'] = account
+        except CustomerAccount.DoesNotExist:
+            pass
+    if request.method == 'POST':
+        form = TransferForm(request.user, request.POST)
+        if form.is_valid():
+            from_account = form.cleaned_data['from_account']
+            to_account_number = form.cleaned_data['to_account_number']
+            amount = form.cleaned_data['amount']
+            description = form.cleaned_data['description'] or f"Transfer to {to_account_number}"
+
+            try:
+                # Verify recipient account exists
+                to_account = CustomerAccount.objects.get(account_number=to_account_number)
+
+                # Check sufficient balance
+                if from_account.balance < amount:
+                    messages.error(request, "Insufficient funds for transfer")
+                    return render(request, 'core/transfer_form.html', {'form': form})
+
+                # Perform transfer (atomic transaction)
+                with transaction.atomic():
+                    # Deduct from sender
+                    from_account.balance -= Decimal(amount)
+                    from_account.save()
+
+                    # Add to recipient
+                    to_account.balance += Decimal(amount)
+                    to_account.save()
+
+                    # Updated description format
+                    out_description = f"Transfer to {to_account.user.get_full_name() or to_account.user.username} (a/c no. {to_account.account_number})"
+                    if description:
+                        out_description += f" - {description}"
+
+                    Transaction.objects.create(
+                        account=from_account,
+                        amount=amount,
+                        transaction_type='TRANSFER_OUT',
+                        description=out_description,
+                        related_account=to_account
+                    )
+
+                    in_description = f"Transfer from {from_account.user.get_full_name() or from_account.user.username} (a/c no. {from_account.account_number})"
+                    if description:
+                        in_description += f" - {description}"
+
+                    Transaction.objects.create(
+                        account=to_account,
+                        amount=amount,
+                        transaction_type='TRANSFER_IN',
+                        description=in_description,
+                        related_account=from_account
+                    )
+
+                messages.success(request, f"Successfully transferred ₹{amount} to account {to_account_number}")
+                return redirect('bank:account_detail', pk=from_account.pk)
+
+            except CustomerAccount.DoesNotExist:
+                messages.error(request, "Recipient account not found")
+            except Exception as e:
+                messages.error(request, f"Transfer failed: {str(e)}")
+    else:
+        form = TransferForm(request.user)
+
+    return render(request, 'core/transfer_form.html', {'form': form})
+
+
+@login_required
+def validate_account(request, account_number):
+    try:
+        account = CustomerAccount.objects.get(account_number=account_number)
+        return JsonResponse({
+            'exists': True,
+            'account_type': account.account_type,
+            'name': account.name
+        })
+    except CustomerAccount.DoesNotExist:
+        return JsonResponse({'exists': False})

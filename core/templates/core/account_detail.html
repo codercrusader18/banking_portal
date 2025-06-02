@@ -21,6 +21,14 @@
     <h2>{{ account.name }} ({{ account.account_number }})</h2>
     <p><strong>Balance:</strong> ₹{{ account.balance|floatformat:2|intcomma }}</p>
 
+    <div class="d-flex justify-content-between align-items-center mb-4">
+<!--        <h2>{{ account.name }} ({{ account.account_number }})</h2>-->
+<!--        <p><strong>Balance:</strong> ₹{{ account.balance|floatformat:2|intcomma }}</p>-->
+        <a href="{% url 'bank:transfer' %}?account={{ account.pk }}" class="btn btn-primary">
+            <i class="bi bi-arrow-left-right"></i> Transfer Money
+        </a>
+    </div>
+
     <div class="d-flex gap-2 mb-3">
         <a href="{% url 'bank:deposit' account.pk %}" class="btn btn-success">Deposit</a>
         <a href="{% url 'bank:withdraw' account.pk %}" class="btn btn-danger">Withdraw</a>
@@ -39,13 +47,23 @@
         <tbody>
             {% for tx in account.transactions.all %}
             <tr>
-                <td>{{ tx.timestamp|date:"d M Y H:i" }}</td>
-                <td>{{ tx.transaction_type }}</td>
-                <td>{{ tx.amount|floatformat:2|intcomma }}</td>
+                <td>{{ tx.timestamp|date:"M d, Y H:i" }}</td>
+                <td>
+                    {% if tx.transaction_type == 'TRANSFER_OUT' %}
+                        <span class="text-danger">Transfer to {{ tx.related_account.user.get_full_name|default:tx.related_account.user.username }} ({{ tx.related_account.account_number }})</span>
+                    {% elif tx.transaction_type == 'TRANSFER_IN' %}
+                        <span class="text-success">Received from {{ tx.related_account.user.get_full_name|default:tx.related_account.user.username }} ({{ tx.related_account.account_number }})</span>
+                    {% else %}
+                        {{ tx.get_transaction_type_display }}
+                    {% endif %}
+                </td>
+                <td class="{% if tx.transaction_type == 'TRANSFER_IN' or tx.transaction_type == 'DEPOSIT' %}text-success{% else %}text-danger{% endif %}">
+                    {% if tx.transaction_type == 'TRANSFER_OUT' or tx.transaction_type == 'WITHDRAW' %}-
+                    {% endif %}
+                    ₹{{ tx.amount|floatformat:2|intcomma }}
+                </td>
                 <td>{{ tx.description }}</td>
             </tr>
-            {% empty %}
-            <tr><td colspan="4">No transactions yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
