@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3>Reject Loan Request</h3>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to reject this loan request?</p>
+                    <p><strong>User:</strong> {{ loan.user.username }}</p>
+                    <p><strong>Amount:</strong> ₹{{ loan.amount }}</p>
+                    <p><strong>Type:</strong> {{ loan.get_loan_type_display }}</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="rejection_reason" class="form-label">Reason for rejection (optional):</label>
+                            <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

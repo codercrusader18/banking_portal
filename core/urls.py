@@ -13,6 +13,12 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('accounts/request/', views.create_account, name='request_account'),
     path('registration-submitted/', views.registration_submitted, name='registration_submitted'),
+    path('loans/request/', views.request_loan, name='request_loan'),
+    path('loans/status/', views.loan_status, name='loan_status'),
+    path('loans/approve/<int:loan_id>/', views.approve_loan, name='approve_loan'),
+    path('loans/reject/<int:loan_id>/', views.reject_loan, name='reject_loan'),
+    path('loans/request/', views.request_loan, name='request_loan'),
+    path('loans/status/', views.loan_status, name='loan_status'),
 
     path('cancel-request/<int:request_id>/', views.cancel_request, name='cancel_request'),
 ]

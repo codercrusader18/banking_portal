@@ -6,7 +6,10 @@
     <div class="d-flex justify-content-between mb-4">
         <h1>Your Accounts</h1>
         <a href="{% url 'bank:create_account' %}" class="btn btn-success">Add Another Account</a>
+        <a href="{% url 'bank:request_loan' %}" class="btn btn-primary">Request Loan</a>
     </div>
+
+</div>
 
     <!-- Pending Requests Section -->
     {% if pending_requests %}

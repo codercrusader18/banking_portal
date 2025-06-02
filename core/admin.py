@@ -11,6 +11,14 @@ class ProfileInline(admin.StackedInline):
     model = CustomerProfile
     can_delete = False
     verbose_name_plural = 'Profile'
+    readonly_fields = ('kyc_document_link',)  # Add this
+
+    def kyc_document_link(self, obj):
+        if obj.kyc_document:
+            return format_html('<a href="{}" target="_blank">View Document</a>', obj.kyc_document.url)
+        return "No document uploaded"
+
+    kyc_document_link.short_description = 'KYC Document'
     # fk_name = 'user'
 
 class CustomUserAdmin(UserAdmin):

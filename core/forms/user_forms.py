@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 
+from core.models import LoanRequest
+
 User = get_user_model()
 
 class CustomUserCreationForm(UserCreationForm):
@@ -20,3 +22,16 @@ class CustomUserCreationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class LoanRequestForm(forms.ModelForm):
+    class Meta:
+        model = LoanRequest
+        fields = ['account', 'loan_type', 'amount', 'duration_months', 'purpose']
+        widgets = {
+            'account': forms.Select(attrs={'class': 'form-control'}),
+            'loan_type': forms.Select(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'duration_months': forms.NumberInput(attrs={'class': 'form-control'}),
+            'purpose': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }

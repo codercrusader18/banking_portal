@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3>Request Loan</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="form-group">
+                            <h5>Loan Details:</h5>
+                            <p>Estimated Monthly Installment: <span id="emi">₹0.00</span></p>
+                            <p>Total Repayment: <span id="total">₹0.00</span></p>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Simple EMI calculator
+document.addEventListener('DOMContentLoaded', function() {
+    const amount = document.querySelector('#id_amount');
+    const duration = document.querySelector('#id_duration_months');
+    const emiSpan = document.querySelector('#emi');
+    const totalSpan = document.querySelector('#total');
+    
+    function calculateEMI() {
+        const principal = parseFloat(amount.value) || 0;
+        const months = parseInt(duration.value) || 1;
+        const rate = 10.0 / 100 / 12; // 10% annual interest
+        
+        const emi = (principal * rate * Math.pow(1 + rate, months)) / 
+                   (Math.pow(1 + rate, months) - 1);
+        const total = emi * months;
+        
+        emiSpan.textContent = '₹' + emi.toFixed(2);
+        totalSpan.textContent = '₹' + total.toFixed(2);
+    }
+    
+    amount.addEventListener('input', calculateEMI);
+    duration.addEventListener('input', calculateEMI);
+});
+</script>
+{% endblock %}

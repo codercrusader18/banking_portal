@@ -20,6 +20,9 @@ from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
 from core import views #Import your views
 from core.views import CustomLoginView
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -38,4 +41,4 @@ path('approve-account/<int:request_id>/', views.approve_account, name='approve_a
 path('approve-user/<int:user_id>/', views.approve_user, name='approve_user'),
     path('reject-user/<int:user_id>/', views.reject_user, name='reject_user'),
 
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

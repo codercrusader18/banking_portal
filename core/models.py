@@ -121,3 +121,36 @@ class AccountRequest(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.account_type} Account Request"
+
+
+class LoanRequest(models.Model):
+    LOAN_TYPES = [
+        ('PERSONAL', 'Personal Loan'),
+        ('HOME', 'Home Loan'),
+        ('CAR', 'Car Loan'),
+        ('EDUCATION', 'Education Loan'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    account = models.ForeignKey(CustomerAccount, on_delete=models.CASCADE)
+    loan_type = models.CharField(max_length=20, choices=LOAN_TYPES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    duration_months = models.PositiveIntegerField()
+    interest_rate = models.DecimalField(max_digits=5, decimal_places=2, default=10.0)  # Default 10% interest
+    purpose = models.TextField()
+    is_approved = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    def monthly_installment(self):
+        # Calculate EMI using standard formula
+        monthly_rate = self.interest_rate / 100 / 12
+        return (self.amount * monthly_rate * (1 + monthly_rate) ** self.duration_months) / \
+            ((1 + monthly_rate) ** self.duration_months - 1)
+
+    def total_repayment(self):
+        return self.monthly_installment() * self.duration_months
+
+    def __str__(self):
+        return f"{self.user.username} - {self.loan_type} Loan ({self.amount})"

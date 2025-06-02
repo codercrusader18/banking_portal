@@ -1,12 +1,14 @@
+import os
+
 from django.urls import reverse
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
 from django.http import HttpResponseForbidden
 from django.shortcuts import render
-from .forms.user_forms import CustomUserCreationForm
-from .models import CustomerAccount, Transaction, CustomerProfile, AccountRequest
+from .forms.user_forms import CustomUserCreationForm, LoanRequestForm
+from .models import CustomerAccount, Transaction, CustomerProfile, AccountRequest, LoanRequest
 from django.db.models import Q
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
@@ -15,6 +17,7 @@ from django.contrib import messages
 from decimal import Decimal, InvalidOperation
 from django.contrib.auth import login, get_user_model
 from django.core.paginator import Paginator
+from django.utils import timezone
 import random
 
 @login_required
@@ -173,10 +176,13 @@ def admin_dashboard(request):
     User = get_user_model()
     pending_users = User.objects.filter(is_approved=False)
     pending_accounts = AccountRequest.objects.filter(is_approved=False)
+    pending_loans = LoanRequest.objects.filter(is_approved=False, is_rejected=False)
 
     return render(request, 'core/admin_dashboard.html', {
         'pending_users': pending_users,
         'pending_accounts': pending_accounts,
+        'pending_loans': pending_loans,
+
     })
 
 
@@ -213,6 +219,10 @@ def user_details(request, user_id):
     profile = get_object_or_404(CustomerProfile, user=user)
     accounts = CustomerAccount.objects.filter(user=user)
     transactions = Transaction.objects.filter(account__user=user)
+
+    # Debug output
+    print(f"KYC Document path: {profile.kyc_document.path if profile.kyc_document else 'None'}")
+    print(f"File exists: {os.path.exists(profile.kyc_document.path) if profile.kyc_document else False}")
 
     return render(request, 'core/user_details.html', {
         'user': user,
@@ -314,3 +324,81 @@ def cancel_request(request, request_id): #to cancel new account creation request
         messages.success(request, 'Account request cancelled successfully')
 
     return redirect('bank:account_list')
+
+
+@login_required
+def request_loan(request):
+    account_id = request.GET.get('account')
+    initial = {}
+
+    if account_id:
+        account = get_object_or_404(CustomerAccount, id=account_id, user=request.user)
+        initial['account'] = account
+
+    if request.method == 'POST':
+        form = LoanRequestForm(request.POST)
+        if form.is_valid():
+            loan = form.save(commit=False)
+            loan.user = request.user
+            loan.interest_rate = 10.0  # Default rate, can be customized
+            loan.save()
+            messages.success(request, 'Loan request submitted for approval')
+            return redirect('bank:loan_status')
+    else:
+        form = LoanRequestForm()
+        # Only show accounts belonging to the current user
+        form.fields['account'].queryset = CustomerAccount.objects.filter(user=request.user)
+
+    return render(request, 'core/request_loan.html', {'form': form})
+
+
+@login_required
+def loan_status(request):
+    loans = LoanRequest.objects.filter(user=request.user).order_by('-requested_at')
+    return render(request, 'core/loan_status.html', {'loans': loans})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin)
+def approve_loan(request, loan_id):
+    loan = get_object_or_404(LoanRequest, id=loan_id)
+    if request.method == 'POST':
+        loan.is_approved = True
+        loan.approved_at = timezone.now()
+        loan.save()
+
+        # Credit the loan amount to the account
+        account = loan.account
+        account.balance += loan.amount
+        account.save()
+
+        # Create a transaction record
+        Transaction.objects.create(
+            account=account,
+            amount=loan.amount,
+            transaction_type='LOAN',
+            description=f"{loan.get_loan_type_display()} Loan Approved"
+        )
+
+        messages.success(request, 'Loan approved and amount credited')
+        return redirect('admin_dashboard')
+
+    context = {
+        'loan': loan,
+        'monthly_installment': loan.monthly_installment(),
+        'total_repayment': loan.total_repayment(),
+    }
+    return render(request, 'core/approve_loan.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin)
+def reject_loan(request, loan_id):
+    loan = get_object_or_404(LoanRequest, id=loan_id)
+    if request.method == 'POST':
+        loan.is_rejected = True
+        loan.save()
+        messages.success(request, 'Loan request rejected')
+        return redirect('admin_dashboard')
+
+    return render(request, 'core/reject_loan.html', {'loan': loan})

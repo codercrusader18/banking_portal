@@ -1,0 +1,52 @@
+<!-- core/templates/core/approve_loan.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3>Approve Loan Request</h3>
+                </div>
+                <div class="card-body">
+                    <div class="loan-details mb-4">
+                        <h5>Loan Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>User:</strong> {{ loan.user.username }}</p>
+                                <p><strong>Account:</strong> {{ loan.account.account_number }}</p>
+                                <p><strong>Loan Type:</strong> {{ loan.get_loan_type_display }}</p>
+                                <p><strong>Amount:</strong> ₹{{ loan.amount|floatformat:2 }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Duration:</strong> {{ loan.duration_months }} months</p>
+                                <p><strong>Interest Rate:</strong> {{ loan.interest_rate }}%</p>
+                                <p><strong>Monthly Installment:</strong> ₹{{ loan.monthly_installment|floatformat:2 }}</p>
+                                <p><strong>Total Repayment:</strong> ₹{{ loan.total_repayment|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6>Purpose:</h6>
+                            <p>{{ loan.purpose }}</p>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="approval_notes" class="form-label">Approval Notes (optional):</label>
+                            <textarea class="form-control" id="approval_notes" name="approval_notes" rows="3"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-success">Confirm Approval</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

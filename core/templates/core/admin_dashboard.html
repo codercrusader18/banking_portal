@@ -27,10 +27,14 @@
                         <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
                         <td>
-                            {% if user.kyc_document %}
-                            <a href="{{ user.kyc_document.url }}" target="_blank">View Document</a>
+                            {% if user.customerprofile.kyc_document %}
+                                <a href="{{ user.customerprofile.kyc_document.url }}"
+                                   target="_blank"
+                                   class="btn btn-sm btn-info">
+                                    View Document
+                                </a>
                             {% else %}
-                            No document
+                                No document
                             {% endif %}
                         </td>
                         <td>
@@ -68,6 +72,96 @@
                     </tr>
                     {% empty %}
                     <tr><td colspan="5">No pending account requests</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add this with other pending approval sections -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h4>Pending Loan Requests</h4>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Account</th>
+                        <th>Loan Type</th>
+                        <th>Amount</th>
+                        <th>Duration</th>
+                        <th>Interest Rate</th>
+                        <th>Purpose</th>
+                        <th>Request Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in pending_loans %}
+                    <tr>
+                        <td>{{ loan.user.username }}</td>
+                        <td>{{ loan.account.account_number }}</td>
+                        <td>{{ loan.get_loan_type_display }}</td>
+                        <td>₹{{ loan.amount|floatformat:2 }}</td>
+                        <td>{{ loan.duration_months }} months</td>
+                        <td>{{ loan.interest_rate }}%</td>
+                        <td>{{ loan.purpose|truncatechars:30 }}</td>
+                        <td>{{ loan.requested_at|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'bank:approve_loan' loan.id %}" class="btn btn-success btn-sm">Approve</a>
+                                <a href="{% url 'bank:reject_loan' loan.id %}" class="btn btn-danger btn-sm">Reject</a>
+                                <a href="#" class="btn btn-info btn-sm"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#loanDetailsModal{{ loan.id }}">
+                                    Details
+                                </a>
+                            </div>
+
+                            <!-- Loan Details Modal -->
+                            <div class="modal fade" id="loanDetailsModal{{ loan.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Loan Request Details</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>User:</strong> {{ loan.user.username }}</p>
+                                                    <p><strong>Account:</strong> {{ loan.account.account_number }} ({{ loan.account.account_type }})</p>
+                                                    <p><strong>Loan Type:</strong> {{ loan.get_loan_type_display }}</p>
+                                                    <p><strong>Amount:</strong> ₹{{ loan.amount|floatformat:2 }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Duration:</strong> {{ loan.duration_months }} months</p>
+                                                    <p><strong>Interest Rate:</strong> {{ loan.interest_rate }}%</p>
+                                                    <p><strong>Monthly Installment:</strong> ₹{{ loan.monthly_installment|floatformat:2 }}</p>
+                                                    <p><strong>Total Repayment:</strong> ₹{{ loan.total_repayment|floatformat:2 }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <h6>Purpose:</h6>
+                                                <p>{{ loan.purpose }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <a href="{% url 'bank:approve_loan' loan.id %}" class="btn btn-success">Approve</a>
+                                            <a href="{% url 'bank:reject_loan' loan.id %}" class="btn btn-danger">Reject</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">No pending loan requests</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
