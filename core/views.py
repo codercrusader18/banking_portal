@@ -30,7 +30,8 @@ def account_list(request):
     pending_requests = AccountRequest.objects.filter(user=request.user, is_approved=False)
 
     if query:
-        accounts = accounts.objects.filter(
+        #changed from accounts = accounts.objects.filter(..) to 
+        accounts = accounts.filter(
             Q(name__icontains=query) | Q(account_number__icontains=query)
         )
 
@@ -55,7 +56,7 @@ def account_detail(request, pk):
         Q(transaction_type='TRANSFER_OUT') |
         Q(transaction_type='TRANSFER_IN')
     ).order_by('-timestamp')
-    return render(request, 'core/account_detail.html', {'account': account, transfers:transfers})
+    return render(request, 'core/account_detail.html', {'account': account, 'transfers':transfers})
 
 # core/views.py
 
