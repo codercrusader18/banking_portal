@@ -36,9 +36,9 @@ urlpatterns = [
     path('', RedirectView.as_view(url='/bank/accounts/', permanent=True)),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('approve-user/<int:user_id>/', views.approve_user, name='approve_user'),
-path('approve-account/<int:request_id>/', views.approve_account, name='approve_account'),
+    path('approve-account/<int:request_id>/', views.approve_account, name='approve_account'),
     path('user-details/<int:user_id>/', views.user_details, name='user_details'),
-path('approve-user/<int:user_id>/', views.approve_user, name='approve_user'),
+    path('account-transactions/<int:account_id>/', views.account_transactions, name='account_transactions'),
     path('reject-user/<int:user_id>/', views.reject_user, name='reject_user'),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
