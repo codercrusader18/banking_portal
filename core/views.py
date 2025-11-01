@@ -30,7 +30,8 @@ def account_list(request):
     pending_requests = AccountRequest.objects.filter(user=request.user, is_approved=False)
 
     if query:
-        accounts = accounts.objects.filter(
+        #changed from accounts = accounts.objects.filter(..) to 
+        accounts = accounts.filter(
             Q(name__icontains=query) | Q(account_number__icontains=query)
         )
 
@@ -55,7 +56,7 @@ def account_detail(request, pk):
         Q(transaction_type='TRANSFER_OUT') |
         Q(transaction_type='TRANSFER_IN')
     ).order_by('-timestamp')
-    return render(request, 'core/account_detail.html', {'account': account, transfers:transfers})
+    return render(request, 'core/account_detail.html', {'account': account, 'transfers':transfers})
 
 # core/views.py
 
@@ -487,3 +488,22 @@ def validate_account(request, account_number):
         })
     except CustomerAccount.DoesNotExist:
         return JsonResponse({'exists': False})
+
+
+@login_required
+def account_transactions(request, account_id):
+    if not request.user.is_admin:
+        return HttpResponseForbidden("Admin access required")
+
+    account = get_object_or_404(CustomerAccount, id=account_id)
+    transactions = account.transactions.all().order_by('-timestamp')
+
+    paginator = Paginator(transactions, 20)  # Show 20 transactions per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'core/account_transactions.html', {
+        'account': account,
+        'transactions': page_obj, # Pass the page object
+        'page_obj': page_obj
+    })

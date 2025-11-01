@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<div class="container mt-5">
+
+    <h3>Transaction History for {{ account.name }} ({{ account.account_number }})</h3>
+    <p><strong>Owner:</strong> {{ account.user.username }}</p>
+    <p><strong>Current Balance:</strong> ₹{{ account.balance|floatformat:2|intcomma }}</p>
+
+    <a href="{% url 'user_details' account.user.id %}" class="btn btn-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Back to User Details
+    </a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Amount (₹)</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+            <tr>
+                <td>{{ tx.timestamp|date:"M d, Y H:i" }}</td>
+                <td>
+                    {% if tx.transaction_type == 'TRANSFER_OUT' %}
+                        <span class="text-danger">Transfer to {{ tx.related_account.user.get_full_name|default:tx.related_account.user.username }} ({{ tx.related_account.account_number }})</span>
+                    {% elif tx.transaction_type == 'TRANSFER_IN' %}
+                        <span class="text-success">Received from {{ tx.related_account.user.get_full_name|default:tx.related_account.user.username }} ({{ tx.related_account.account_number }})</span>
+                    {% elif tx.transaction_type == 'LOAN' %}
+                        <span class="text-success">{{ tx.get_transaction_type_display }}</span>
+                    {% else %}
+                        {{ tx.get_transaction_type_display }}
+                    {% endif %}
+                </td>
+                <td class="{% if tx.transaction_type == 'TRANSFER_IN' or tx.transaction_type == 'DEPOSIT' or tx.transaction_type == 'LOAN' %}text-success{% else %}text-danger{% endif %}">
+                    {% if tx.transaction_type == 'TRANSFER_OUT' or tx.transaction_type == 'WITHDRAW' %}-
+                    {% endif %}
+                    ₹{{ tx.amount|floatformat:2|intcomma }}
+                </td>
+                <td>{{ tx.description }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No transactions found for this account.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">&laquo;&laquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">&laquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&laquo;</a>
+                </li>
+            {% endif %}
+
+            {% for i in page_obj.paginator.page_range %}
+                {% if page_obj.number == i %}
+                    <li class="page-item active" aria-current="page">
+                        <a class="page-link" href="#">{{ i }}</a>
+                    </li>
+                {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">&raquo;</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">&raquo;&raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">&raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    </div>
+{% endblock %}
